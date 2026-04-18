@@ -6,6 +6,7 @@ from car import Car, DriftState
 from physics import Physics
 from track import Track
 from ui import UI
+from particles import ParticleSystem
 
 class GameState(Enum):
     """游戏状态枚举"""
@@ -35,6 +36,7 @@ class Game:
         self.physics = Physics()
         self.physics.set_track_boundaries(self.track.boundaries)
         self.ui = UI(1200, 800)
+        self.particle_system = ParticleSystem()
 
     def run(self):
         """主游戏循环"""
@@ -111,6 +113,24 @@ class Game:
             if self.physics.check_collision(self.car):
                 self.physics.handle_collision(self.car)
 
+            # 漂移粒子效果
+            if self.car.drift_state == DriftState.DRIFTING:
+                # 计算车尾位置
+                rad = math.radians(self.car.angle + 180)
+                tail_x = self.car.x + math.cos(rad) * 20
+                tail_y = self.car.y + math.sin(rad) * 20
+                self.particle_system.emit(tail_x, tail_y, (150, 150, 150), count=2, lifetime=0.3)
+
+            # 喷射尾焰效果
+            elif self.car.drift_state == DriftState.NITRO:
+                rad = math.radians(self.car.angle + 180)
+                tail_x = self.car.x + math.cos(rad) * 25
+                tail_y = self.car.y + math.sin(rad) * 25
+                self.particle_system.emit(tail_x, tail_y, (255, 150, 50), count=3, lifetime=0.2, size=5)
+
+            # 更新粒子
+            self.particle_system.update(dt)
+
             # 检查是否完成比赛
             if self.track.finished:
                 self.state = GameState.FINISHED
@@ -146,14 +166,6 @@ class Game:
 
         self.screen.blit(rotated_car, rect)
 
-        # 绘制漂移粒子效果（简单版本）
-        if self.car.drift_state == DriftState.DRIFTING:
-            for i in range(3):
-                offset_x = -math.cos(math.radians(self.car.angle)) * (20 + i * 10)
-                offset_y = -math.sin(math.radians(self.car.angle)) * (20 + i * 10)
-                pygame.draw.circle(self.screen, (100, 100, 100),
-                                 (int(self.car.x + offset_x), int(self.car.y + offset_y)), 3)
-
     def _draw_menu(self):
         """绘制菜单画面"""
         self.ui.draw_menu(self.screen)
@@ -162,6 +174,7 @@ class Game:
         """绘制游戏画面"""
         self.track.draw(self.screen)
         self._draw_car()
+        self.particle_system.draw(self.screen)
         self.ui.draw_hud(self.screen, self.car, self.track)
 
     def _draw_results(self):
