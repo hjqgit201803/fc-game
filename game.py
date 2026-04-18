@@ -3,6 +3,7 @@ import sys
 import math
 from enum import Enum
 from car import Car, DriftState
+from physics import Physics
 
 class GameState(Enum):
     """游戏状态枚举"""
@@ -24,6 +25,7 @@ class Game:
         self.fps = 60
         self.car = Car(100, 400, 0)  # 赛车初始位置
         self.keys_pressed = set()
+        self.physics = Physics()
 
     def run(self):
         """主游戏循环"""
