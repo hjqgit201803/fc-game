@@ -5,6 +5,7 @@ from enum import Enum
 from car import Car, DriftState
 from physics import Physics
 from track import Track
+from ui import UI
 
 class GameState(Enum):
     """游戏状态枚举"""
@@ -33,6 +34,7 @@ class Game:
         self.keys_pressed = set()
         self.physics = Physics()
         self.physics.set_track_boundaries(self.track.boundaries)
+        self.ui = UI(1200, 800)
 
     def run(self):
         """主游戏循环"""
@@ -154,38 +156,25 @@ class Game:
 
     def _draw_menu(self):
         """绘制菜单画面"""
-        self.screen.fill((30, 30, 40))
-        font = pygame.font.Font(None, 64)
-        title = font.render("QQ SPEED CLONE", True, (255, 255, 255))
-        self.screen.blit(title, (1200//2 - title.get_width()//2, 300))
-
-        font_small = pygame.font.Font(None, 32)
-        prompt = font_small.render("Press SPACE to Start", True, (200, 200, 200))
-        self.screen.blit(prompt, (1200//2 - prompt.get_width()//2, 400))
+        self.ui.draw_menu(self.screen)
 
     def _draw_game(self):
         """绘制游戏画面"""
         self.track.draw(self.screen)
         self._draw_car()
+        self.ui.draw_hud(self.screen, self.car, self.track)
 
     def _draw_results(self):
         """绘制成绩画面"""
-        self.screen.fill((30, 30, 40))
-        font = pygame.font.Font(None, 48)
-        text = font.render("Race Finished!", True, (255, 255, 255))
-        self.screen.blit(text, (1200//2 - text.get_width()//2, 350))
-
-        font_small = pygame.font.Font(None, 32)
-        prompt = font_small.render("Press R to Restart | Q to Quit", True, (200, 200, 200))
-        self.screen.blit(prompt, (1200//2 - prompt.get_width()//2, 420))
+        self.ui.draw_results(self.screen, self.track)
 
     def reset_game(self):
         """重置游戏状态"""
-        self.state = GameState.PLAYING
         self.track.reset()
         self.car.x = self.track.start_pos['x']
         self.car.y = self.track.start_pos['y']
         self.car.angle = self.track.start_pos['angle']
         self.car.speed = 0
-        self.car.velocity_x = 0
-        self.car.velocity_y = 0
+        self.car.drift_state = DriftState.NONE
+        self.car.nitro_level = 0
+        self.state = GameState.PLAYING
