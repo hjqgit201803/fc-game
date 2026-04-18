@@ -38,6 +38,10 @@ class Game:
         self.ui = UI(1200, 800)
         self.particle_system = ParticleSystem()
         self._emission_frame = 0
+        self.sound_enabled = False
+        # 音频系统预留
+        # self.sounds = {}
+        # self._load_sounds()
 
     def run(self):
         """主游戏循环"""
@@ -195,3 +199,11 @@ class Game:
         self.car.drift_state = DriftState.NONE
         self.car.nitro_level = 0
         self.state = GameState.PLAYING
+
+    def _load_sounds(self):
+        """加载音效（预留）"""
+        pass
+
+    def play_sound(self, name):
+        """播放音效（预留）"""
+        pass
