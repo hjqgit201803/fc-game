@@ -4,6 +4,7 @@ import math
 from enum import Enum
 from car import Car, DriftState
 from physics import Physics
+from track import Track
 
 class GameState(Enum):
     """游戏状态枚举"""
@@ -23,9 +24,15 @@ class Game:
         self.running = True
         self.state = GameState.MENU
         self.fps = 60
-        self.car = Car(100, 400, 0)  # 赛车初始位置
+        self.track = Track(1200, 800)
+        self.car = Car(
+            self.track.start_pos['x'],
+            self.track.start_pos['y'],
+            self.track.start_pos['angle']
+        )
         self.keys_pressed = set()
         self.physics = Physics()
+        self.physics.set_track_boundaries(self.track.boundaries)
 
     def run(self):
         """主游戏循环"""
@@ -96,6 +103,15 @@ class Game:
         """更新游戏状态"""
         if self.state == GameState.PLAYING:
             self.car.update(dt)
+            self.track.update(dt, self.car)
+
+            # 碰撞检测
+            if self.physics.check_collision(self.car):
+                self.physics.handle_collision(self.car)
+
+            # 检查是否完成比赛
+            if self.track.finished:
+                self.state = GameState.FINISHED
         elif self.state == GameState.MENU:
             pass
         elif self.state == GameState.FINISHED:
@@ -149,7 +165,7 @@ class Game:
 
     def _draw_game(self):
         """绘制游戏画面"""
-        self.screen.fill((50, 50, 50))
+        self.track.draw(self.screen)
         self._draw_car()
 
     def _draw_results(self):
@@ -166,3 +182,10 @@ class Game:
     def reset_game(self):
         """重置游戏状态"""
         self.state = GameState.PLAYING
+        self.track.reset()
+        self.car.x = self.track.start_pos['x']
+        self.car.y = self.track.start_pos['y']
+        self.car.angle = self.track.start_pos['angle']
+        self.car.speed = 0
+        self.car.velocity_x = 0
+        self.car.velocity_y = 0
