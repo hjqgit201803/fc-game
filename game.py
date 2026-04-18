@@ -1,6 +1,8 @@
 import pygame
 import sys
+import math
 from enum import Enum
+from car import Car, DriftState
 
 class GameState(Enum):
     """游戏状态枚举"""
@@ -20,6 +22,8 @@ class Game:
         self.running = True
         self.state = GameState.MENU
         self.fps = 60
+        self.car = Car(100, 400, 0)  # 赛车初始位置
+        self.keys_pressed = set()
 
     def run(self):
         """主游戏循环"""
@@ -38,17 +42,58 @@ class Game:
             if event.type == pygame.QUIT:
                 self.running = False
             elif event.type == pygame.KEYDOWN:
+                self.keys_pressed.add(event.key)
                 if event.key == pygame.K_q and self.state != GameState.MENU:
                     self.running = False
                 elif event.key == pygame.K_SPACE and self.state == GameState.MENU:
                     self.state = GameState.PLAYING
                 elif event.key == pygame.K_r and self.state == GameState.FINISHED:
                     self.reset_game()
+                # 漂移键处理
+                elif event.key == pygame.K_LSHIFT or event.key == pygame.K_RSHIFT:
+                    self.car.start_drift()
+
+            elif event.type == pygame.KEYUP:
+                if event.key in self.keys_pressed:
+                    self.keys_pressed.remove(event.key)
+                # 漂移键释放
+                if event.key == pygame.K_LSHIFT or event.key == pygame.K_RSHIFT:
+                    self.car.end_drift()
+
+        # 持续按键处理
+        self._handle_continuous_input()
+
+    def _handle_continuous_input(self):
+        """处理持续按键状态"""
+        if self.state == GameState.PLAYING:
+            # 加速
+            if pygame.K_UP in self.keys_pressed or pygame.K_w in self.keys_pressed:
+                self.car.accelerate()
+            else:
+                self.car.release_accelerate()
+
+            # 刹车
+            if pygame.K_DOWN in self.keys_pressed or pygame.K_s in self.keys_pressed:
+                self.car.brake()
+            else:
+                self.car.release_brake()
+
+            # 左转
+            if pygame.K_LEFT in self.keys_pressed or pygame.K_a in self.keys_pressed:
+                self.car.turn_left()
+            else:
+                self.car.release_turn_left()
+
+            # 右转
+            if pygame.K_RIGHT in self.keys_pressed or pygame.K_d in self.keys_pressed:
+                self.car.turn_right()
+            else:
+                self.car.release_turn_right()
 
     def update(self, dt):
         """更新游戏状态"""
         if self.state == GameState.PLAYING:
-            pass  # 后续添加更新逻辑
+            self.car.update(dt)
         elif self.state == GameState.MENU:
             pass
         elif self.state == GameState.FINISHED:
@@ -65,6 +110,30 @@ class Game:
 
         pygame.display.flip()
 
+    def _draw_car(self):
+        """绘制赛车"""
+        car_width = 40
+        car_height = 20
+
+        # 创建赛车表面
+        car_surface = pygame.Surface((car_width, car_height), pygame.SRCALPHA)
+        color = self.car.get_color()
+        pygame.draw.rect(car_surface, color, (0, 0, car_width, car_height), border_radius=5)
+
+        # 旋转赛车
+        rotated_car = pygame.transform.rotate(car_surface, -self.car.angle)
+        rect = rotated_car.get_rect(center=(self.car.x, self.car.y))
+
+        self.screen.blit(rotated_car, rect)
+
+        # 绘制漂移粒子效果（简单版本）
+        if self.car.drift_state == DriftState.DRIFTING:
+            for i in range(3):
+                offset_x = -math.cos(math.radians(self.car.angle)) * (20 + i * 10)
+                offset_y = -math.sin(math.radians(self.car.angle)) * (20 + i * 10)
+                pygame.draw.circle(self.screen, (100, 100, 100),
+                                 (int(self.car.x + offset_x), int(self.car.y + offset_y)), 3)
+
     def _draw_menu(self):
         """绘制菜单画面"""
         self.screen.fill((30, 30, 40))
@@ -79,6 +148,7 @@ class Game:
     def _draw_game(self):
         """绘制游戏画面"""
         self.screen.fill((50, 50, 50))
+        self._draw_car()
 
     def _draw_results(self):
         """绘制成绩画面"""
