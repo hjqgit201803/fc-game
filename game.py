@@ -37,6 +37,7 @@ class Game:
         self.physics.set_track_boundaries(self.track.boundaries)
         self.ui = UI(1200, 800)
         self.particle_system = ParticleSystem()
+        self._emission_frame = 0
 
     def run(self):
         """主游戏循环"""
@@ -115,18 +116,21 @@ class Game:
 
             # 漂移粒子效果
             if self.car.drift_state == DriftState.DRIFTING:
-                # 计算车尾位置
-                rad = math.radians(self.car.angle + 180)
-                tail_x = self.car.x + math.cos(rad) * 20
-                tail_y = self.car.y + math.sin(rad) * 20
-                self.particle_system.emit(tail_x, tail_y, (150, 150, 150), count=2, lifetime=0.3)
+                self._emission_frame += 1
+                if self._emission_frame % 3 == 0:  # 每3帧发射一次
+                    rad = math.radians(self.car.angle + 180)
+                    tail_x = self.car.x + math.cos(rad) * 20
+                    tail_y = self.car.y + math.sin(rad) * 20
+                    self.particle_system.emit(tail_x, tail_y, (150, 150, 150), count=2, lifetime=0.3)
 
             # 喷射尾焰效果
             elif self.car.drift_state == DriftState.NITRO:
-                rad = math.radians(self.car.angle + 180)
-                tail_x = self.car.x + math.cos(rad) * 25
-                tail_y = self.car.y + math.sin(rad) * 25
-                self.particle_system.emit(tail_x, tail_y, (255, 150, 50), count=3, lifetime=0.2, size=5)
+                self._emission_frame += 1
+                if self._emission_frame % 2 == 0:  # 每2帧发射一次
+                    rad = math.radians(self.car.angle + 180)
+                    tail_x = self.car.x + math.cos(rad) * 25
+                    tail_y = self.car.y + math.sin(rad) * 25
+                    self.particle_system.emit(tail_x, tail_y, (255, 150, 50), count=3, lifetime=0.2, size=5)
 
             # 更新粒子
             self.particle_system.update(dt)

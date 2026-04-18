@@ -47,13 +47,13 @@ class Particle:
             surface: Pygame 表面对象
         """
         alpha = int(255 * (self.lifetime / self.max_lifetime))
-        color = (*self.color[:3], alpha)
 
-        # 创建带 alpha 的表面
-        particle_surf = pygame.Surface((self.size * 2, self.size * 2), pygame.SRCALPHA)
-        pygame.draw.circle(particle_surf, color, (self.size, self.size), self.size)
+        # 创建临时表面用于 alpha 混合
+        temp_surface = pygame.Surface((self.size * 2, self.size * 2), pygame.SRCALPHA)
+        pygame.draw.circle(temp_surface, (*self.color[:3], alpha), (self.size, self.size), self.size)
 
-        surface.blit(particle_surf, (int(self.x - self.size), int(self.y - self.size)))
+        # 直接 blit 到目标表面
+        surface.blit(temp_surface, (int(self.x - self.size), int(self.y - self.size)))
 
 class ParticleSystem:
     """粒子系统管理器"""
